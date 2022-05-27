@@ -11,6 +11,11 @@
   
   <title>
     
+      About 
+      
+      
+      |
+    
      LIK-ing の blogs
   </title>
 
@@ -114,43 +119,38 @@
 
 
       <div class="flex-container">
-        <div class="container index">
-  <div class="post-list">
-    <!-- 遍历渲染文章 -->
-    
-      <div class="post-item" title="Shiro回显与冰蝎内存马">
-        <div class="time-m-d">2022-05-26</div>
-        <div class="title">
-          <a href="/2022/05/26/Shiro%E5%9B%9E%E6%98%BE%E4%B8%8E%E5%86%B0%E8%9D%8E%E5%86%85%E5%AD%98%E9%A9%AC/">
-            
-              
-                <span>Shiro回显与冰蝎内存马</span>
-              
-            
-          </a>
-        </div>
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+  <!-- 关于页 url形式：https://yoursite/about/ -->
+    <div class="container about-index">
+      <div class="markdown-body">
+        
       </div>
-    
-      <div class="post-item" title="重写3环API+syscall">
-        <div class="time-m-d">2022-05-19</div>
-        <div class="title">
-          <a href="/2022/05/19/%E9%87%8D%E5%86%993%E7%8E%AFAPI-syscall/">
-            
-              
-                <span>重写3环API+syscall</span>
-              
-            
-          </a>
-        </div>
-      </div>
-    
-  </div>
-  <nav class="post-navigation">
-    
-    <span class="page-num">1 / 1</span>
-    
-  </nav>
-</div>
+    </div>
+  
+
+  
 
         
 <div class="footer">
@@ -404,6 +404,24 @@
 
 
         
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + about + '&url=' + https%3A%2F%2Flik-ing.github.io%2Fabout%2Findex.html + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://lik-ing.github.io/about/index.html" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
   
   
 <script src="/js/shares.js"></script>
